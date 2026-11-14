@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Monitoring Dashboard - SecureNet AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        securenet: {
+                            dark: '#0A3323',
+                            moss: '#839958',
+                            beige: '#F7F4D5',
+                            rosy: '#D3968C',
+                            midnight: '#105666',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.6s ease-out',
+                        'slide-up': 'slideUp 0.6s ease-out',
+                        'pulse-glow': 'pulseGlow 2s ease-in-out infinite',
+                        'bounce-subtle': 'bounceSubtle 1s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        pulseGlow: {
+                            '0%, 100%': { boxShadow: '0 0 20px rgba(131, 153, 88, 0.5)' },
+                            '50%': { boxShadow: '0 0 40px rgba(131, 153, 88, 0.8)' },
+                        },
+                        bounceSubtle: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-5px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(-45deg, #F7F4D5, #ffffff, #f0f0f0, #F7F4D5);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        .status-indicator {
+            animation: pulseGlow 2s ease-in-out infinite;
+        }
+        .attack-row:hover {
+            background: rgba(211, 150, 140, 0.1);
+            transform: scale(1.01);
+            transition: all 0.3s ease;
+        }
+        .simulation-button {
+            transition: all 0.3s ease;
+        }
+        .simulation-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <nav class="glass-effect border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-3">
+                    <div class="bg-gradient-to-br from-securenet-dark to-securenet-moss p-2 rounded-xl shadow-lg">
+                        <i class="bi bi-shield-check text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <span class="text-xl font-bold" style="color: #0A3323;">SecureNet AI</span>
+                        <p class="text-xs font-medium" style="color: #839958;">Network Monitoring</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <div id="statusIndicator" class="flex items-center gap-2 px-3 py-1 rounded-full status-indicator" style="background-color: #839958;">
+                        <i class="bi bi-circle-fill text-white text-xs"></i>
+                        <span class="text-white text-sm font-medium">System Active</span>
+                    </div>
+                    <a href="/logout" class="px-4 py-2 text-sm font-semibold rounded-lg transition-colors duration-200" style="color: #0A3323; hover:background-color: #F7F4D5;">
+                        Sign Out
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold mb-2" style="color: #0A3323;">Network Intrusion Detection Dashboard</h1>
+            <p class="text-gray-600">Real-time monitoring and threat analysis powered by CNN-LSTM models</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="glass-effect rounded-2xl p-6 shadow-lg">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background-color: #0A3323;">
+                        <i class="bi bi-shield-check text-white text-xl"></i>
+                    </div>
+                    <span id="totalDetections" class="text-2xl font-bold" style="color: #0A3323;">0</span>
+                </div>
+                <h3 class="font-semibold text-gray-800 mb-1">Total Detections</h3>
+                <p class="text-sm text-gray-600">Since monitoring started</p>
+            </div>
+
+            <div class="glass-effect rounded-2xl p-6 shadow-lg">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background-color: #D3968C;">
+                        <i class="bi bi-exclamation-triangle text-white text-xl"></i>
+                    </div>
+                    <span id="threatCount" class="text-2xl font-bold" style="color: #D3968C;">0</span>
+                </div>
+                <h3 class="font-semibold text-gray-800 mb-1">Active Threats</h3>
+                <p class="text-sm text-gray-600">High confidence attacks</p>
+            </div>
+
+            <div class="glass-effect rounded-2xl p-6 shadow-lg">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background-color: #839958;">
+                        <i class="bi bi-cpu text-white text-xl"></i>
+                    </div>
+                    <span id="modelAccuracy" class="text-2xl font-bold" style="color: #839958;">97.4%</span>
+                </div>
+                <h3 class="font-semibold text-gray-800 mb-1">Model Accuracy</h3>
+                <p class="text-sm text-gray-600">CNN-LSTM performance</p>
+            </div>
+
+            <div class="glass-effect rounded-2xl p-6 shadow-lg">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background-color: #105666;">
+                        <i class="bi bi-clock text-white text-xl"></i>
+                    </div>
+                    <span id="uptime" class="text-2xl font-bold" style="color: #105666;">00:00</span>
+                </div>
+                <h3 class="font-semibold text-gray-800 mb-1">Monitoring Time</h3>
+                <p class="text-sm text-gray-600">Session duration</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            
+            <div class="lg:col-span-2 glass-effect rounded-2xl p-6 shadow-lg">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-bold" style="color: #0A3323;">Simulation Control</h2>
+                    <div class="flex items-center gap-3">
+                        <label class="text-sm font-medium text-gray-700">Alert Threshold:</label>
+                        <input type="range" id="thresholdSlider" min="0.1" max="1" step="0.1" value="0.8" 
+                               class="w-24 h-2 rounded-lg appearance-none cursor-pointer"
+                               style="background: linear-gradient(to right, #839958, #0A3323);">
+                        <span id="thresholdValue" class="text-sm font-bold" style="color: #0A3323;">80%</span>
+                    </div>
+                </div>
+
+                <div class="flex gap-4 mb-6">
+                    <button id="startBtn" class="flex-1 simulation-button px-6 py-4 text-white font-semibold rounded-xl shadow-lg" 
+                            style="background: linear-gradient(to right, #839958, #105666);">
+                        <span class="flex items-center justify-center gap-2">
+                            <i class="bi bi-play-fill text-xl"></i>
+                            <span>Start Simulation</span>
+                        </span>
+                    </button>
+                    
+                    <button id="stopBtn" class="flex-1 simulation-button px-6 py-4 text-white font-semibold rounded-xl shadow-lg opacity-50" 
+                            style="background: linear-gradient(to right, #D3968C, #0A3323);" disabled>
+                        <span class="flex items-center justify-center gap-2">
+                            <i class="bi bi-stop-fill text-xl"></i>
+                            <span>Stop Simulation</span>
+                        </span>
+                    </button>
+                </div>
+
+                <div id="simulationStatus" class="p-4 rounded-xl border-l-4 hidden" 
+                     style="background-color: rgba(131, 153, 88, 0.1); border-color: #839958;">
+                    <div class="flex items-center gap-2">
+                        <i class="bi bi-info-circle-fill" style="color: #839958;"></i>
+                        <span class="font-medium" style="color: #0A3323;">Simulation Status</span>
+                    </div>
+                    <p class="text-sm text-gray-700 mt-1">Network traffic simulation stopped. Click Start to begin monitoring.</p>
+                </div>
+            </div>
+
+            <div class="glass-effect rounded-2xl p-6 shadow-lg">
+                <h3 class="text-lg font-bold mb-4" style="color: #0A3323;">Attack Distribution</h3>
+                <div class="relative h-48">
+                    <canvas id="attackChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-effect rounded-2xl shadow-lg overflow-hidden">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xl font-bold" style="color: #0A3323;">Real-time Detection Log</h2>
+                    <button onclick="clearLog()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors duration-200">
+                        Clear Log
+                    </button>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead style="background-color: #F7F4D5;">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider" style="color: #0A3323;">Timestamp</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider" style="color: #0A3323;">Source IP</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider" style="color: #0A3323;">Dest IP</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider" style="color: #0A3323;">Attack Type</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider" style="color: #0A3323;">Confidence</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider" style="color: #0A3323;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detectionTable" class="divide-y divide-gray-200">
+                        <tr>
+                            <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                                <i class="bi bi-shield-slash text-4xl mb-2 block"></i>
+                                No detections yet. Start simulation to begin monitoring.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let simulationRunning = false;
+        let startTime = null;
+        let uptimeInterval = null;
+        let attackChart = null;
+        let attackCounts = {};
+
+        function initializeChart() {
+            const ctx = document.getElementById('attackChart').getContext('2d');
+            attackChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['BENIGN', 'DoS', 'PortScan', 'DDoS', 'Brute Force', 'Web Attack'],
+                    datasets: [{
+                        data: [0, 0, 0, 0, 0, 0],
+                        backgroundColor: [
+                            '#839958',
+                            '#D3968C',
+                            '#105666',
+                            '#0A3323',
+                            '#b08968',
+                            '#7d4c46'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { fontSize: 10 }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateUptime() {
+            if (startTime) {
+                const elapsed = Date.now() - startTime;
+                const minutes = Math.floor(elapsed / 60000);
+                const seconds = Math.floor((elapsed % 60000) / 1000);
+                document.getElementById('uptime').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+        }
+
+        function updateStatus(message, isRunning) {
+            const statusDiv = document.getElementById('simulationStatus');
+            const statusP = statusDiv.querySelector('p');
+            statusP.textContent = message;
+            statusDiv.classList.remove('hidden');
+            
+            if (isRunning) {
+                statusDiv.style.backgroundColor = 'rgba(131, 153, 88, 0.1)';
+                statusDiv.style.borderColor = '#839958';
+                statusDiv.querySelector('i').style.color = '#839958';
+            } else {
+                statusDiv.style.backgroundColor = 'rgba(211, 150, 140, 0.1)';
+                statusDiv.style.borderColor = '#D3968C';
+                statusDiv.querySelector('i').style.color = '#D3968C';
+            }
+        }
+
+        async function startSimulation() {
+            try {
+                const response = await fetch('/start_simulation', { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.success) {
+                    simulationRunning = true;
+                    startTime = Date.now();
+                    
+                    document.getElementById('startBtn').disabled = true;
+                    document.getElementById('startBtn').classList.add('opacity-50');
+                    document.getElementById('stopBtn').disabled = false;
+                    document.getElementById('stopBtn').classList.remove('opacity-50');
+                    
+                    updateStatus('Network traffic simulation active. Monitoring for threats...', true);
+                    
+                    uptimeInterval = setInterval(updateUptime, 1000);
+                    fetchResults();
+                }
+            } catch (error) {
+                console.error('Error starting simulation:', error);
+            }
+        }
+
+        async function stopSimulation() {
+            try {
+                const response = await fetch('/stop_simulation', { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.success) {
+                    simulationRunning = false;
+                    
+                    document.getElementById('startBtn').disabled = false;
+                    document.getElementById('startBtn').classList.remove('opacity-50');
+                    document.getElementById('stopBtn').disabled = true;
+                    document.getElementById('stopBtn').classList.add('opacity-50');
+                    
+                    updateStatus('Simulation stopped. Network monitoring paused.', false);
+                    
+                    if (uptimeInterval) {
+                        clearInterval(uptimeInterval);
+                        uptimeInterval = null;
+                    }
+                }
+            } catch (error) {
+                console.error('Error stopping simulation:', error);
+            }
+        }
+
+        async function fetchResults() {
+            if (!simulationRunning) return;
+            
+            try {
+                const response = await fetch('/get_results');
+                const data = await response.json();
+                
+                updateDashboard(data);
+                
+                if (simulationRunning) {
+                    setTimeout(fetchResults, 2000);
+                }
+            } catch (error) {
+                console.error('Error fetching results:', error);
+                if (simulationRunning) {
+                    setTimeout(fetchResults, 5000);
+                }
+            }
+        }
+
+        function updateDashboard(data) {
+            document.getElementById('totalDetections').textContent = data.total_detections || 0;
+            
+            const threatCount = data.results.filter(r => r.is_attack && r.confidence > 0.8).length;
+            document.getElementById('threatCount').textContent = threatCount;
+            
+            updateTable(data.results);
+            updateChart(data.results);
+        }
+
+        function updateTable(results) {
+            const tbody = document.getElementById('detectionTable');
+            
+            if (results.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                            <i class="bi bi-shield-slash text-4xl mb-2 block"></i>
+                            No detections yet. Start simulation to begin monitoring.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = results.slice(-10).reverse().map(result => {
+                const isAttack = result.is_attack;
+                const confidencePercent = (result.confidence * 100).toFixed(1);
+                const rowClass = isAttack ? 'attack-row' : '';
+                const statusColor = isAttack ? '#D3968C' : '#839958';
+                const statusIcon = isAttack ? 'exclamation-triangle-fill' : 'shield-check';
+                const statusText = isAttack ? 'THREAT' : 'SAFE';
+                
+                return `
+                    <tr class="${rowClass}">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${result.timestamp}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-700">${result.source_ip}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-700">${result.dest_ip}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 py-1 text-xs font-medium rounded-full" 
+                                  style="background-color: ${isAttack ? 'rgba(211, 150, 140, 0.2)' : 'rgba(131, 153, 88, 0.2)'}; color: ${statusColor};">
+                                ${result.attack_type}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold" style="color: ${statusColor};">
+                            ${confidencePercent}%
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center gap-2">
+                                <i class="bi bi-${statusIcon}" style="color: ${statusColor};"></i>
+                                <span class="text-xs font-medium" style="color: ${statusColor};">${statusText}</span>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function updateChart(results) {
+            attackCounts = {};
+            
+            results.forEach(result => {
+                const type = result.attack_type === 'BENIGN' ? 'BENIGN' : 
+                           result.attack_type.includes('DoS') ? 'DoS' :
+                           result.attack_type.includes('PortScan') ? 'PortScan' :
+                           result.attack_type.includes('DDoS') ? 'DDoS' :
+                           result.attack_type.includes('Patator') ? 'Brute Force' :
+                           result.attack_type.includes('Web') ? 'Web Attack' : 'Other';
+                
+                attackCounts[type] = (attackCounts[type] || 0) + 1;
+            });
+            
+            const chartData = ['BENIGN', 'DoS', 'PortScan', 'DDoS', 'Brute Force', 'Web Attack']
+                .map(type => attackCounts[type] || 0);
+            
+            attackChart.data.datasets[0].data = chartData;
+            attackChart.update();
+        }
+
+        function clearLog() {
+            document.getElementById('detectionTable').innerHTML = `
+                <tr>
+                    <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                        <i class="bi bi-shield-slash text-4xl mb-2 block"></i>
+                        Log cleared. Continue monitoring for new detections.
+                    </td>
+                </tr>
+            `;
+        }
+
+        async function updateThreshold() {
+            const threshold = document.getElementById('thresholdSlider').value;
+            document.getElementById('thresholdValue').textContent = (threshold * 100).toFixed(0) + '%';
+            
+            try {
+                await fetch('/set_threshold', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ threshold: parseFloat(threshold) })
+                });
+            } catch (error) {
+                console.error('Error updating threshold:', error);
+            }
+        }
+
+        document.getElementById('startBtn').addEventListener('click', startSimulation);
+        document.getElementById('stopBtn').addEventListener('click', stopSimulation);
+        document.getElementById('thresholdSlider').addEventListener('input', updateThreshold);
+
+        initializeChart();
+    </script>
+
+</body>
+</html>
