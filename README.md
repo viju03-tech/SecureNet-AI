@@ -20,6 +20,9 @@ Strong on the attacks that matter most — **BENIGN F1 0.98, DDoS F1 0.99, PortS
 
 ## 🧠 Model
 
+![Architecture](assets/architecture.png)
+
+
 **CNN-LSTM, 15 attack classes** — Conv1D(64) → Dropout → Conv1D(128) → Dropout → LSTM(100) → Dense softmax. CNN layers learn local patterns in network flows; the LSTM learns the sequence. Trained with early stopping, learning-rate reduction and checkpointing (20 epochs max, GPU).
 
 **Classes detected:** BENIGN, DDoS, PortScan, DoS Hulk, DoS GoldenEye, DoS slowloris, DoS Slowhttptest, FTP-Patator, SSH-Patator, Bot, Web Attack (Brute Force / XSS / SQL Injection), Infiltration, Heartbleed.
